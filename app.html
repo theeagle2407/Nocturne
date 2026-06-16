@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOCTURNE</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23C7A557%22 stroke-width=%222%22><path d=%22M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z%22></path></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;600&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --bg: #0A0C10;
+            --surface: #11141B;
+            --line: rgba(255,255,255,0.06);
+            --text: #ECEFF4;
+            --muted: #7E8794;
+            --accent: #9FC1FF;
+            --brass: #C7A557;
+            --gain: #3FB97E;
+            --loss: #E5575C;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            font-variant-numeric: tabular-nums;
+        }
+        .container {
+            max-width: 1100px;
+            margin-left: 8vw;
+            margin-right: auto;
+            padding: 2rem 0 4rem;
+        }
+        .fade-in {
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+        
+        .serif { font-family: 'Fraunces', serif; }
+        .mono { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+        .brass { color: var(--brass); }
+        .muted { color: var(--muted); }
+        .gain { color: var(--gain); }
+        .loss { color: var(--loss); }
+        .eyebrow {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--brass);
+            margin-bottom: 1rem;
+        }
+        
+        .top-bar {
+            display: flex;
+            align-items: center;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--line);
+            margin-bottom: 3rem;
+        }
+        .wordmark { font-family: 'Fraunces', serif; font-size: 1.5rem; color: var(--brass); letter-spacing: 0.05em; }
+        
+        .masthead { margin-bottom: 3rem; }
+        .masthead h1 { font-size: 2.5rem; font-weight: 400; line-height: 1.2; margin-bottom: 1rem; }
+        .masthead .deck { font-size: 1.1rem; color: var(--muted); max-width: 600px; margin-bottom: 1.5rem; }
+        .meta-row { font-size: 0.8rem; color: var(--muted); display: flex; gap: 2rem; flex-wrap: wrap; }
+        
+        .mode-toggle {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .mode-btn {
+            background: transparent;
+            border: 1px solid var(--line);
+            color: var(--muted);
+            padding: 0.5rem 1rem;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mode-btn.active {
+            border-color: var(--brass);
+            color: var(--brass);
+            background: rgba(199, 165, 87, 0.05);
+        }
+        
+        .control-panel {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            padding: 1.5rem;
+            margin-bottom: 3rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            align-items: end;
+        }
+        .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .form-group label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+        .form-group input, .form-group select {
+            background: var(--bg);
+            border: 1px solid var(--line);
+            color: var(--text);
+            padding: 0.5rem;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            outline: none;
+        }
+        .form-group input:focus, .form-group select:focus { border-color: var(--brass); }
+        .btn-run {
+            background: var(--brass);
+            color: var(--bg);
+            border: none;
+            padding: 0.6rem 1.2rem;
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn-run:hover { opacity: 0.9; }
+        .btn-run:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .metrics-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        .metrics-block { }
+        .metrics-block-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--brass);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--line);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+        .metrics-strip {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0;
+        }
+        .metric-item {
+            padding: 0.75rem 0;
+            border-right: 1px solid var(--line);
+        }
+        .metric-item:last-child { border-right: none; }
+        .metric-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.25rem; }
+        .metric-value { font-size: 1.25rem; font-weight: 500; }
+        
+        .panel { margin-bottom: 3rem; padding-bottom: 3rem; border-bottom: 1px solid var(--line); }
+        .panel:last-child { border-bottom: none; }
+        .chart-container { width: 100%; height: 350px; }
+        
+        .signals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .signal-card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            padding: 1rem;
+        }
+        .signal-card h4 { font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text); }
+        .signal-row { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem; }
+        .signal-row .label { color: var(--muted); }
+        
+        .finding-box {
+            background: var(--surface);
+            border-left: 3px solid var(--brass);
+            padding: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .trade-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .trade-controls input, .trade-controls select {
+            background: var(--bg);
+            border: 1px solid var(--line);
+            color: var(--text);
+            padding: 0.4rem 0.6rem;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.8rem;
+            outline: none;
+        }
+        .trade-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .trade-table th {
+            text-align: left;
+            padding: 0.75rem 0.5rem;
+            color: var(--muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.65rem;
+            letter-spacing: 0.1em;
+            border-bottom: 1px solid var(--line);
+            cursor: pointer;
+            user-select: none;
+        }
+        .trade-table th:hover { color: var(--text); }
+        .trade-table td {
+            padding: 0.6rem 0.5rem;
+            border-bottom: 1px solid var(--line);
+        }
+        .mode-tag {
+            display: inline-block;
+            padding: 0.15rem 0.4rem;
+            font-size: 0.65rem;
+            border: 1px solid var(--line);
+            border-radius: 2px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+        .pagination button {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            color: var(--text);
+            padding: 0.3rem 0.8rem;
+            cursor: pointer;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+        .pagination button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .footer {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--line);
+            font-size: 0.75rem;
+            color: var(--muted);
+            text-align: center;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(10, 12, 16, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            display: none;
+        }
+        .loading-overlay.active { display: flex; }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid var(--line);
+            border-top-color: var(--brass);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+            .container { margin-left: 1.5rem; margin-right: 1.5rem; }
+            .metrics-container { grid-template-columns: 1fr; }
+            .metrics-strip { grid-template-columns: repeat(2, 1fr); }
+            .metric-item { border-right: none; border-bottom: 1px solid var(--line); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="container">
+        <div class="top-bar fade-in" style="animation-delay: 0.1s;">
+            <div class="wordmark">NOCTURNE</div>
+        </div>
+
+        <div class="masthead fade-in" style="animation-delay: 0.2s;">
+            <h1 class="serif">Tokenized stocks never sleep.<br>Wall Street does.</h1>
+            <p class="deck">Overnight-risk intelligence for tokenized US stocks — which trade 24/7 while their underlying shares sleep.</p>
+            <div class="meta-row mono" id="metaRow" style="flex-direction: column; align-items: flex-start; gap: 0.5rem;">
+                <span>UNIVERSE: AAPL, NVDA, TSLA, MSFT, AMZN, META, SPY</span>
+                <span>DATA: yfinance (underlying) + Bitget public API (tokenized)</span>
+                <span>RANGE: 2023-06-10 to 2026-06-10</span>
+            </div>
+        </div>
+
+        <div class="mode-toggle fade-in" style="animation-delay: 0.25s;">
+            <button class="mode-btn active" id="modeGap" onclick="setMode('gap')">Gap Engine</button>
+            <button class="mode-btn" id="modeOvernight" onclick="setMode('overnight')">Overnight Hold Analysis</button>
+        </div>
+
+        <!-- GAP ENGINE SECTION -->
+        <div id="gapSection">
+            <div class="control-panel fade-in" style="animation-delay: 0.3s;">
+                <div class="form-group">
+                    <label>Tickers (comma sep)</label>
+                    <input type="text" id="tickers" value="AAPL,NVDA,TSLA,MSFT,AMZN,META,SPY">
+                </div>
+                <div class="form-group">
+                    <label>Start Date</label>
+                    <input type="date" id="startDate" value="2023-06-10">
+                </div>
+                <div class="form-group">
+                    <label>End Date</label>
+                    <input type="date" id="endDate" value="2026-06-10">
+                </div>
+                <div class="form-group">
+                    <label>Min Gap (%)</label>
+                    <input type="number" id="gapThreshold" value="1.5" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Cont. Gap (%)</label>
+                    <input type="number" id="contGap" value="3.0" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Vol Ratio High</label>
+                    <input type="number" id="volHigh" value="1.5" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Vol Ratio Low</label>
+                    <input type="number" id="volLow" value="1.2" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>ATR Mult</label>
+                    <input type="number" id="atrMult" value="1.5" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Max Pos</label>
+                    <input type="number" id="maxPos" value="5" step="1">
+                </div>
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button class="btn-run" id="runBtn" onclick="runBacktest()">Run Backtest</button>
+                </div>
+            </div>
+
+            <div class="metrics-container fade-in" style="animation-delay: 0.4s;">
+                <div class="metrics-block">
+                    <div class="metrics-block-title" id="isRangeTitle">In-Sample</div>
+                    <div class="metrics-strip" id="metricsIS"></div>
+                </div>
+                <div class="metrics-block">
+                    <div class="metrics-block-title" id="oosRangeTitle">Out-of-Sample</div>
+                    <div class="metrics-strip" id="metricsOOS"></div>
+                </div>
+            </div>
+
+            <div class="panel fade-in" style="animation-delay: 0.5s;">
+                <div class="eyebrow">Overnight Risk Monitor · Tonight</div>
+                
+                <div class="form-group" style="max-width: 300px; margin-bottom: 1.5rem;">
+                    <label>Position Size ($ per name)</label>
+                    <input type="number" id="positionSize" value="10000" step="1000" oninput="updateRiskMonitor()">
+                </div>
+
+                <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem; padding: 1rem; background: var(--surface); border: 1px solid var(--line);">
+                    <div>
+                        <div class="metric-label">Total Est. 1σ Overnight Risk</div>
+                        <div class="metric-value mono" id="totalRisk">$0</div>
+                    </div>
+                    <div style="border-left: 1px solid var(--line); padding-left: 2rem;">
+                        <div class="metric-label">Names in BLACKOUT</div>
+                        <div class="metric-value mono loss" id="blackoutCount">0</div>
+                    </div>
+                </div>
+
+                <div class="signals-grid" id="riskMonitorGrid"></div>
+            </div>
+
+            <div class="panel fade-in" style="animation-delay: 0.6s;">
+                <div class="eyebrow">Overnight Exposure Planner</div>
+                <p class="muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">
+                    Historical risk management tool. All metrics are derived from past data and do not constitute predictions or financial advice. 
+                    Total risk is a simple sum and explicitly ignores diversification or correlation benefits.
+                </p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                    <div>
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label>Max Overnight Risk Tonight ($)</label>
+                            <input type="number" id="riskBudget" value="1500" step="100" oninput="updateExposurePlanner()">
+                        </div>
+                        <table class="trade-table mono" style="margin-bottom: 1rem;">
+                            <thead>
+                                <tr>
+                                    <th>Ticker</th>
+                                    <th>Position ($)</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="holdingsBody"></tbody>
+                        </table>
+                        <button class="btn-run" style="font-size: 0.7rem; padding: 0.4rem 0.8rem;" onclick="addHoldingRow()">+ Add Position</button>
+                    </div>
+                    
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1rem; padding: 1rem; background: var(--surface); border: 1px solid var(--line);">
+                            <div>
+                                <div class="metric-label">Total 1σ Overnight Risk</div>
+                                <div class="metric-value mono" id="plannerTotalRisk">$0</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="metric-label">Risk Budget</div>
+                                <div class="metric-value mono" id="plannerBudget">$1,500</div>
+                            </div>
+                        </div>
+                        <div class="eyebrow" style="margin-top: 1.5rem;">Tonight's Action Plan</div>
+                        <table class="trade-table mono">
+                            <thead>
+                                <tr>
+                                    <th>Ticker</th>
+                                    <th>Position</th>
+                                    <th>1σ Risk ($)</th>
+                                    <th>State</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="actionPlanBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel fade-in" style="animation-delay: 0.75s;">
+                <div class="eyebrow">Closed-Market Exposure · Tokenized (Bitget)</div>
+                <p class="muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">
+                    Source: Bitget public hourly candles. Window: 2026-04-30 to 2026-06-10. 
+                    Tokens trade continuously; "closed" = hours the underlying US market is shut (Mon–Fri 16:00–09:30 ET + weekends). Exchange holidays ignored.
+                </p>
+                
+                <div class="finding-box" style="margin-bottom: 1.5rem;">
+                    <div class="eyebrow">Historical Finding</div>
+                    <p class="mono" style="font-size: 0.9rem; line-height: 1.6; color: var(--text);">
+                        Across the universe, closed hours represent ~80.7% of the week, meaning holders naturally accumulate the majority of total price movement (70.9% on average) during this window. However, per-hour volatility is consistently lower when the US market is closed than when it is open. While absolute unhedgeable exposure accumulates during closed hours simply due to the time elapsed, these tokens do not exhibit disproportionately high per-hour volatility overnight or on weekends compared to regular trading hours. Note: History is limited to the maximum ~1000 hourly candles (~41 days) available via Bitget's public API.
+                    </p>
+                </div>
+
+                <table class="trade-table mono">
+                    <thead>
+                        <tr>
+                            <th>Token</th>
+                            <th>% Movement (Closed)<br><span style="font-size:0.7em; color:var(--muted)">(Baseline: ~80.7% of week)</span></th>
+                            <th>Closed Vol (1h)</th>
+                            <th>Open Vol (1h)</th>
+                            <th>Largest Closed Move</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>AAPLONUSDT</td>
+                            <td>73.6%</td>
+                            <td>0.327%</td>
+                            <td>0.417%</td>
+                            <td class="gain">+3.12% <span class="muted">(2026-05-31 12:00 ET)</span></td>
+                        </tr>
+                        <tr>
+                            <td>NVDAONUSDT</td>
+                            <td>68.3%</td>
+                            <td>0.402%</td>
+                            <td>0.657%</td>
+                            <td class="loss">-2.40% <span class="muted">(2026-06-03 09:00 ET)</span></td>
+                        </tr>
+                        <tr>
+                            <td>TSLAONUSDT</td>
+                            <td>64.8%</td>
+                            <td>0.373%</td>
+                            <td>0.784%</td>
+                            <td class="gain">+2.59% <span class="muted">(2026-05-08 09:00 ET)</span></td>
+                        </tr>
+                        <tr>
+                            <td>MSFTONUSDT</td>
+                            <td>72.4%</td>
+                            <td>0.352%</td>
+                            <td>0.509%</td>
+                            <td class="gain">+2.34% <span class="muted">(2026-05-28 09:00 ET)</span></td>
+                        </tr>
+                        <tr>
+                            <td>AMZNONUSDT</td>
+                            <td>69.9%</td>
+                            <td>0.306%</td>
+                            <td>0.511%</td>
+                            <td class="gain">+1.71% <span class="muted">(2026-05-18 09:00 ET)</span></td>
+                        </tr>
+                        <tr>
+                            <td>METAONUSDT</td>
+                            <td>70.1%</td>
+                            <td>0.358%</td>
+                            <td>0.579%</td>
+                            <td class="loss">-3.04% <span class="muted">(2026-06-01 09:00 ET)</span></td>
+                        </tr>
+                        <tr>
+                            <td>SPYONUSDT</td>
+                            <td>76.9%</td>
+                            <td>0.221%</td>
+                            <td>0.280%</td>
+                            <td class="gain">+0.90% <span class="muted">(2026-05-31 08:00 ET)</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="panel fade-in" style="animation-delay: 0.8s;">
+                <div class="eyebrow">Equity Curve · Strategy vs SPY</div>
+                <div id="equityChart" class="chart-container"></div>
+            </div>
+
+            <div class="panel fade-in" style="animation-delay: 0.7s;">
+                <div class="eyebrow">Drawdown</div>
+                <div id="drawdownChart" class="chart-container" style="height: 250px;"></div>
+            </div>
+
+            <div class="panel fade-in" style="animation-delay: 0.8s;">
+                <div class="eyebrow">Trade Log</div>
+                <div class="trade-controls">
+                    <input type="text" id="searchTrade" placeholder="Search ticker..." oninput="filterTrades()">
+                    <select id="filterMode" onchange="filterTrades()">
+                        <option value="ALL">All Modes</option>
+                        <option value="CONTINUATION">Continuation</option>
+                        <option value="FADE">Fade</option>
+                    </select>
+                </div>
+                <table class="trade-table mono">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTrades('date')">Date ↕</th>
+                            <th onclick="sortTrades('ticker')">Ticker ↕</th>
+                            <th onclick="sortTrades('mode')">Mode ↕</th>
+                            <th onclick="sortTrades('direction')">Dir ↕</th>
+                            <th onclick="sortTrades('gap_pct')">Gap% ↕</th>
+                            <th onclick="sortTrades('entry')">Entry ↕</th>
+                            <th onclick="sortTrades('exit')">Exit ↕</th>
+                            <th onclick="sortTrades('return_pct')">Return% ↕</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tradeLogBody"></tbody>
+                </table>
+                <div class="pagination">
+                    <span id="pageInfo">Page 1 of 1</span>
+                    <div>
+                        <button onclick="changePage(-1)" id="prevBtn">Previous</button>
+                        <button onclick="changePage(1)" id="nextBtn">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OVERNIGHT HOLD SECTION -->
+        <div id="overnightSection" style="display: none;">
+            <div class="masthead fade-in" style="animation-delay: 0.3s; margin-bottom: 2rem;">
+                <h2 class="serif" style="font-size: 1.8rem; margin-bottom: 0.5rem;">Overnight Hold Analysis</h2>
+                <p class="deck" style="font-size: 1rem;">A rigorous, parameter-free decomposition of the overnight-return premium. Entering at the close and exiting at the next open, isolating the night effect from intraday noise.</p>
+            </div>
+
+            <div class="panel fade-in" style="animation-delay: 0.4s;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <div class="eyebrow" style="margin-bottom: 0;">Return Decomposition · Cumulative</div>
+                    <select id="decompTickerSelect" onchange="renderDecompositionChart(this.value)" style="background: var(--bg); border: 1px solid var(--line); color: var(--text); padding: 0.4rem 0.6rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; outline: none;">
+                        <option value="Portfolio">Equal-Weight Portfolio</option>
+                    </select>
+                </div>
+                <div id="decompChart" class="chart-container"></div>
+            </div>
+
+            <div class="finding-box fade-in" style="animation-delay: 0.5s;">
+                <div class="eyebrow">Parameter-Free Finding</div>
+                <p class="mono" id="findingText" style="font-size: 0.9rem; line-height: 1.6; color: var(--text);"></p>
+                <p class="muted" style="font-size: 0.75rem; margin-top: 0.5rem;">
+                    Note: This analysis is strictly parameter-free. No optimization or curve-fitting was applied; it purely measures the mechanical overnight return premium.
+                </p>
+            </div>
+
+            <div class="panel fade-in" style="animation-delay: 0.6s;">
+                <div class="eyebrow">Gross Cumulative Totals (%)</div>
+                <table class="trade-table mono">
+                    <thead>
+                        <tr>
+                            <th>Asset</th>
+                            <th>Overnight (Close → Open)</th>
+                            <th>Intraday (Open → Close)</th>
+                            <th>Buy & Hold</th>
+                        </tr>
+                    </thead>
+                    <tbody id="totalsBody"></tbody>
+                </table>
+            </div>
+
+            <div class="panel fade-in" style="animation-delay: 0.7s;">
+                <div class="eyebrow">Overnight Strategy Metrics · Equal-Weight Portfolio</div>
+                <table class="trade-table mono">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th id="overnightIsHeader">IS Gross</th>
+                            <th>IS Net (-0.10%)</th>
+                            <th id="overnightOosHeader">OOS Gross</th>
+                            <th>OOS Net (-0.10%)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="overnightMetricsBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer fade-in" style="animation-delay: 0.9s;">
+            <p class="mono" style="margin-bottom: 0.5rem;">
+                Data Provenance: Underlying equity historical overnight/intraday analysis: yfinance. Live tokenized 24/7 reference pricing: Bitget public market API.
+            </p>
+            <p class="mono" style="margin-bottom: 0.5rem;">
+                Accuracy Note: Tokenized assets trade continuously outside US market hours and do not exhibit traditional equity overnight gaps. All overnight-return and gap analysis applies strictly to the underlying equity. No synthetic data. Past performance is not indicative of future results. This is not financial advice.
+            </p>
+            <p class="mono muted" style="margin-top: 1rem; font-size: 0.7rem;">
+                Bitget tokenized symbols analyzed via public hourly candles: 7 (AAPLon, NVDAon, TSLAon, MSFTon, AMZNon, METAon, SPYon).
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'gap';
+        let overnightData = null;
+        let decompChart = null;
+        
+        let allTrades = [];
+        let filteredTrades = [];
+        let currentPage = 1;
+        const rowsPerPage = 20;
+        let sortCol = 'date';
+        let sortAsc = false;
+        let equityChart, drawdownChart;
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('modeGap').classList.toggle('active', mode === 'gap');
+            document.getElementById('modeOvernight').classList.toggle('active', mode === 'overnight');
+            
+            document.getElementById('gapSection').style.display = mode === 'gap' ? 'block' : 'none';
+            document.getElementById('overnightSection').style.display = mode === 'overnight' ? 'block' : 'none';
+            
+            if (mode === 'overnight' && !overnightData) {
+                runOvernightAnalysis();
+            }
+        }
+
+        function formatPct(val) {
+            return (val >= 0 ? '+' : '') + val.toFixed(2) + '%';
+        }
+
+        function renderMetrics(containerId, metrics) {
+            const container = document.getElementById(containerId);
+            if (!metrics || Object.keys(metrics).length === 0) {
+                container.innerHTML = '<div class="metric-item" style="grid-column: 1/-1; text-align:center; color: var(--muted);">No data for this period</div>';
+                return;
+            }
+            const items = [
+                { label: 'Total Return', value: metrics.total_return_pct, isPct: true },
+                { label: 'CAGR', value: metrics.cagr_pct, isPct: true },
+                { label: 'Sharpe', value: metrics.sharpe_ratio, isPct: false },
+                { label: 'Max DD', value: metrics.max_drawdown_pct, isPct: true, forceLoss: true },
+                { label: 'Win Rate', value: metrics.win_rate_pct, isPct: true },
+                { label: 'Trades', value: metrics.num_trades, isPct: false }
+            ];
+            container.innerHTML = items.map(item => {
+                let valStr = item.isPct ? formatPct(item.value) : item.value.toFixed(2);
+                let colorClass = '';
+                if (item.forceLoss || item.value < 0) colorClass = 'loss';
+                else if (item.value > 0 && item.isPct) colorClass = 'gain';
+                return `
+                    <div class="metric-item">
+                        <div class="metric-label">${item.label}</div>
+                        <div class="metric-value mono ${colorClass}">${valStr}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        let riskMonitorData = [];
+
+        function updateRiskMonitor() {
+            const positionSize = parseFloat(document.getElementById('positionSize').value) || 0;
+            let totalRisk = 0;
+            let blackoutCount = 0;
+            
+            const grid = document.getElementById('riskMonitorGrid');
+            grid.innerHTML = riskMonitorData.map(r => {
+                if (r.risk_state === 'BLACKOUT') blackoutCount++;
+                const sigmaDollar = positionSize * r.sigma_pct;
+                const worstDollar = positionSize * r.worst_move_pct;
+                totalRisk += Math.abs(sigmaDollar);
+                
+                let stateColor = 'muted';
+                if (r.risk_state === 'BLACKOUT') stateColor = 'loss';
+                else if (r.risk_state === 'ELEVATED') stateColor = 'brass';
+                
+                const concPct = Math.round(r.concentration);
+                const sign = concPct >= 0 ? '+' : '';
+                const concText = Math.abs(concPct) > 5 ? `≈${sign}${concPct}% of return historically overnight` : 'Minimal overnight concentration';
+                
+                return `
+                    <div class="signal-card">
+                        <h4 class="mono">${r.ticker} <span class="muted" style="font-size: 0.75rem; font-weight: 400;">(${r.latest_date})</span></h4>
+                        <div class="signal-row"><span class="label">Exposure</span><span class="mono">Close → Next Open</span></div>
+                        <div class="signal-row"><span class="label">Historical 1σ Move</span><span class="mono">±${(r.sigma_pct * 100).toFixed(2)}% ($${Math.abs(sigmaDollar).toFixed(0)})</span></div>
+                        <div class="signal-row"><span class="label">Worst Hist. Move</span><span class="mono loss">$${Math.abs(worstDollar).toFixed(0)}</span></div>
+                        <div class="signal-row"><span class="label">Return Concentration</span><span class="mono">${concText}</span></div>
+                        <div class="signal-row" style="margin-top: 0.5rem; border-top: 1px solid var(--line); padding-top: 0.5rem;">
+                            <span class="label">Risk State</span>
+                            <span class="mono ${stateColor}" style="font-weight: 600;">${r.risk_state}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('totalRisk').textContent = '$' + totalRisk.toFixed(0);
+            document.getElementById('blackoutCount').textContent = blackoutCount;
+        }
+
+        let holdings = [];
+
+        function initHoldings() {
+            if (!riskMonitorData || riskMonitorData.length === 0) return;
+            holdings = riskMonitorData.map(r => ({
+                ticker: r.ticker,
+                position: 10000
+            }));
+            renderHoldings();
+            updateExposurePlanner();
+        }
+
+        function renderHoldings() {
+            const tbody = document.getElementById('holdingsBody');
+            tbody.innerHTML = holdings.map((h, idx) => `
+                <tr>
+                    <td>
+                        <select onchange="updateHoldingTicker(${idx}, this.value)" style="background: var(--bg); border: 1px solid var(--line); color: var(--text); padding: 0.3rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; width: 100%;">
+                            ${riskMonitorData.map(r => `<option value="${r.ticker}" ${r.ticker === h.ticker ? 'selected' : ''}>${r.ticker}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" value="${h.position}" step="100" oninput="updateHoldingPosition(${idx}, this.value)" style="background: var(--bg); border: 1px solid var(--line); color: var(--text); padding: 0.3rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; width: 100px;">
+                    </td>
+                    <td>
+                        <button onclick="removeHolding(${idx})" style="background: transparent; border: 1px solid var(--line); color: var(--loss); padding: 0.2rem 0.5rem; cursor: pointer;">×</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function addHoldingRow() {
+            holdings.push({ ticker: riskMonitorData[0].ticker, position: 10000 });
+            renderHoldings();
+            updateExposurePlanner();
+        }
+
+        function removeHolding(idx) {
+            holdings.splice(idx, 1);
+            renderHoldings();
+            updateExposurePlanner();
+        }
+
+        function updateHoldingTicker(idx, value) {
+            holdings[idx].ticker = value;
+            updateExposurePlanner();
+        }
+
+        function updateHoldingPosition(idx, value) {
+            holdings[idx].position = parseFloat(value) || 0;
+            updateExposurePlanner();
+        }
+
+        function updateExposurePlanner() {
+            const budget = parseFloat(document.getElementById('riskBudget').value) || 0;
+            document.getElementById('plannerBudget').textContent = '$' + budget.toLocaleString();
+            
+            let totalRisk = 0;
+            let plan = [];
+            
+            holdings.forEach(h => {
+                const r = riskMonitorData.find(x => x.ticker === h.ticker) || { sigma_pct: 0, worst_move_pct: 0, risk_state: 'NORMAL', concentration: 0 };
+                const sigma_dollar = h.position * r.sigma_pct;
+                totalRisk += sigma_dollar;
+                
+                plan.push({
+                    ticker: h.ticker,
+                    position: h.position,
+                    sigma_dollar: sigma_dollar,
+                    risk_state: r.risk_state,
+                    concentration: r.concentration,
+                    sigma_pct: r.sigma_pct,
+                    action: 'HOLD',
+                    new_position: h.position
+                });
+            });
+            
+            const totalRiskEl = document.getElementById('plannerTotalRisk');
+            totalRiskEl.textContent = '$' + Math.round(totalRisk).toLocaleString();
+            totalRiskEl.className = 'metric-value mono ' + (totalRisk > budget ? 'loss' : 'gain');
+            
+            if (totalRisk > budget) {
+                plan.sort((a, b) => {
+                    if (a.risk_state === 'BLACKOUT' && b.risk_state !== 'BLACKOUT') return -1;
+                    if (a.risk_state !== 'BLACKOUT' && b.risk_state === 'BLACKOUT') return 1;
+                    if (Math.abs(a.concentration) !== Math.abs(b.concentration)) {
+                        return Math.abs(b.concentration) - Math.abs(a.concentration);
+                    }
+                    return b.sigma_dollar - a.sigma_dollar;
+                });
+                
+                let currentRisk = totalRisk;
+                for (let i = 0; i < plan.length; i++) {
+                    if (currentRisk <= budget) break;
+                    
+                    let p = plan[i];
+                    if (p.risk_state === 'BLACKOUT') {
+                        p.action = 'FLAT';
+                        currentRisk -= p.sigma_dollar;
+                        p.new_position = 0;
+                    } else {
+                        let overage = currentRisk - budget;
+                        let reduction = overage / p.sigma_pct;
+                        let new_pos = Math.max(0, p.position - reduction);
+                        let risk_reduction = (p.position - new_pos) * p.sigma_pct;
+                        
+                        p.new_position = new_pos;
+                        if (new_pos === 0) {
+                            p.action = 'FLAT';
+                        } else {
+                            p.action = `TRIM to $${Math.round(new_pos).toLocaleString()}`;
+                        }
+                        currentRisk -= risk_reduction;
+                    }
+                }
+            }
+            
+            const planBody = document.getElementById('actionPlanBody');
+            planBody.innerHTML = plan.map(p => {
+                let stateColor = 'muted';
+                if (p.risk_state === 'BLACKOUT') stateColor = 'loss';
+                else if (p.risk_state === 'ELEVATED') stateColor = 'brass';
+                
+                let actionColor = 'gain';
+                if (p.action === 'FLAT') actionColor = 'loss';
+                else if (p.action.startsWith('TRIM')) actionColor = 'brass';
+                
+                return `
+                    <tr>
+                        <td>${p.ticker}</td>
+                        <td>$${Math.round(p.position).toLocaleString()}</td>
+                        <td>$${Math.round(p.sigma_dollar).toLocaleString()}</td>
+                        <td class="${stateColor}">${p.risk_state}</td>
+                        <td class="${actionColor}" style="font-weight: 600;">${p.action}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterTrades() {
+            const search = document.getElementById('searchTrade').value.toUpperCase();
+            const mode = document.getElementById('filterMode').value;
+            
+            filteredTrades = allTrades.filter(t => {
+                const matchSearch = t.ticker.toUpperCase().includes(search);
+                const matchMode = mode === 'ALL' || t.mode === mode;
+                return matchSearch && matchMode;
+            });
+            
+            sortTradesData();
+            currentPage = 1;
+            renderTrades();
+        }
+
+        function sortTrades(col) {
+            if (sortCol === col) {
+                sortAsc = !sortAsc;
+            } else {
+                sortCol = col;
+                sortAsc = true;
+            }
+            sortTradesData();
+            renderTrades();
+        }
+
+        function sortTradesData() {
+            filteredTrades.sort((a, b) => {
+                let valA = a[sortCol];
+                let valB = b[sortCol];
+                if (typeof valA === 'string') {
+                    return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                }
+                return sortAsc ? valA - valB : valB - valA;
+            });
+        }
+
+        function changePage(delta) {
+            const maxPage = Math.ceil(filteredTrades.length / rowsPerPage) || 1;
+            currentPage = Math.max(1, Math.min(maxPage, currentPage + delta));
+            renderTrades();
+        }
+
+        function renderTrades() {
+            const tbody = document.getElementById('tradeLogBody');
+            const start = (currentPage - 1) * rowsPerPage;
+            const pageData = filteredTrades.slice(start, start + rowsPerPage);
+            const maxPage = Math.ceil(filteredTrades.length / rowsPerPage) || 1;
+            
+            document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${maxPage} (${filteredTrades.length} total)`;
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = currentPage === maxPage;
+
+            tbody.innerHTML = pageData.map(t => {
+                const retClass = t.return_pct >= 0 ? 'gain' : 'loss';
+                const dirStr = t.direction === 1 ? 'LONG' : 'SHORT';
+                return `
+                    <tr>
+                        <td>${t.date}</td>
+                        <td>${t.ticker}</td>
+                        <td><span class="mode-tag">${t.mode}</span></td>
+                        <td>${dirStr}</td>
+                        <td>${(t.gap_pct * 100).toFixed(2)}%</td>
+                        <td>${t.entry.toFixed(2)}</td>
+                        <td>${t.exit.toFixed(2)}</td>
+                        <td class="${retClass}">${(t.return_pct * 100).toFixed(2)}%</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderCharts(equityCurve) {
+            if (equityChart) equityChart.dispose();
+            if (drawdownChart) drawdownChart.dispose();
+
+            equityChart = echarts.init(document.getElementById('equityChart'));
+            equityChart.setOption({
+                backgroundColor: 'transparent',
+                grid: { top: 40, right: 20, bottom: 30, left: 60 },
+                tooltip: { 
+                    trigger: 'axis', 
+                    backgroundColor: '#11141B', 
+                    borderColor: 'rgba(255,255,255,0.1)', 
+                    textStyle: { color: '#ECEFF4', fontFamily: 'IBM Plex Mono', fontSize: 11 } 
+                },
+                dataZoom: [{ type: 'slider', bottom: 0, height: 20, borderColor: 'transparent', fillerColor: 'rgba(199, 165, 87, 0.2)', handleStyle: { color: '#C7A557' } }],
+                legend: { data: ['Strategy', 'SPY Benchmark'], textStyle: { color: '#7E8794', fontFamily: 'IBM Plex Mono', fontSize: 11 }, top: 0, right: 0 },
+                xAxis: { 
+                    type: 'category', 
+                    data: equityCurve.map(d => d.date),
+                    axisLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },
+                    axisLabel: { color: '#7E8794', fontFamily: 'IBM Plex Mono', fontSize: 10 }
+                },
+                yAxis: { 
+                    type: 'value',
+                    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },
+                    axisLabel: { color: '#7E8794', fontFamily: 'IBM Plex Mono', fontSize: 10 }
+                },
+                series: [
+                    {
+                        name: 'Strategy',
+                        type: 'line',
+                        data: equityCurve.map(d => d.strategy_equity),
+                        smooth: true,
+                        showSymbol: false,
+                        lineStyle: { color: '#9FC1FF', width: 2 },
+                        areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(159, 193, 255, 0.15)' }, { offset: 1, color: 'rgba(159, 193, 255, 0)' }] } }
+                    },
+                    {
+                        name: 'SPY Benchmark',
+                        type: 'line',
+                        data: equityCurve.map(d => d.benchmark_equity),
+                        smooth: true,
+                        showSymbol: false,
+                        lineStyle: { color: '#7E8794', width: 1, type: 'dashed' }
+                    }
+                ]
+            });
+
+            drawdownChart = echarts.init(document.getElementById('drawdownChart'));
+            drawdownChart.setOption({
+                backgroundColor: 'transparent',
+                grid: { top: 20, right: 20, bottom: 30, left: 60 },
+                tooltip: { 
+                    trigger: 'axis', 
+                    backgroundColor: '#11141B', 
+                    borderColor: 'rgba(255,255,255,0.1)', 
+                    textStyle: { color: '#ECEFF4', fontFamily: 'IBM Plex Mono', fontSize: 11 },
+                    formatter: (p) => `${p[0].axisValue}<br/>Drawdown: ${p[0].value.toFixed(2)}%` 
+                },
+                dataZoom: [{ type: 'slider', bottom: 0, height: 20, borderColor: 'transparent', fillerColor: 'rgba(199, 165, 87, 0.2)', handleStyle: { color: '#C7A557' } }],
+                xAxis: { 
+                    type: 'category', 
+                    data: equityCurve.map(d => d.date),
+                    axisLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },
+                    axisLabel: { color: '#7E8794', fontFamily: 'IBM Plex Mono', fontSize: 10 }
+                },
+                yAxis: { 
+                    type: 'value',
+                    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },
+                    axisLabel: { color: '#7E8794', fontFamily: 'IBM Plex Mono', fontSize: 10, formatter: '{value}%' }
+                },
+                series: [{
+                    name: 'Drawdown',
+                    type: 'line',
+                    data: equityCurve.map(d => d.drawdown * 100),
+                    smooth: true,
+                    showSymbol: false,
+                    lineStyle: { color: '#E5575C', width: 1.5 },
+                    areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(229, 87, 92, 0.2)' }, { offset: 1, color: 'rgba(229, 87, 92, 0)' }] } }
+                }]
+            });
+
+            window.addEventListener('resize', () => {
+                equityChart.resize();
+                drawdownChart.resize();
+            });
+        }
+
+        function renderDecompositionChart(selectedTicker) {
+            if (decompChart) decompChart.dispose();
+            decompChart = echarts.init(document.getElementById('decompChart'));
+            
+            let data = selectedTicker === 'Portfolio' ? overnightData.decomposition.portfolio : overnightData.decomposition.tickers[selectedTicker];
+            
+            decompChart.setOption({
+                backgroundColor: 'transparent',
+                grid: { top: 40, right: 20, bottom: 30, left: 60 },
+                tooltip: { 
+                    trigger: 'axis', 
+                    backgroundColor: '#11141B', 
+                    borderColor: 'rgba(255,255,255,0.1)', 
+                    textStyle: { color: '#ECEFF4', fontFamily: 'IBM Plex Mono', fontSize: 11 },
+                    formatter: function(params) {
+                        let res = params[0].axisValue + '<br/>';
+                        params.forEach(p => {
+                            res += `<span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:${p.color};"></span>`;
+                            res += `${p.seriesName}: ${(p.value).toFixed(2)}%<br/>`;
+                        });
+                        return res;
+                    }
+                },
+                legend: { 
+                    data: ['Overnight (Close → Open)', 'Intraday (Open → Close)', 'Buy & Hold'], 
+                    textStyle: { color: '#7E8794', fontFamily: 'IBM Plex Mono', fontSize: 11 }, 
+                    top: 0, right: 0 
+                },
+                xAxis: { 
+                    type: 'category', 
+                    data: data.dates,
+                    axisLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },
+                    axisLabel: { color: '#7E8794', fontFamily: 'IBM Plex Mono', fontSize: 10 }
+                },
+                yAxis: { 
+                    type: 'value',
+                    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },
+                    axisLabel: { color: '#7E8794', fontFamily: 'IBM Plex Mono', fontSize: 10, formatter: '{value}%' }
+                },
+                series: [
+                    {
+                        name: 'Overnight (Close → Open)',
+                        type: 'line',
+                        data: data.cum_overnight.map(x => x * 100),
+                        smooth: true,
+                        showSymbol: false,
+                        lineStyle: { color: '#9FC1FF', width: 2 }
+                    },
+                    {
+                        name: 'Intraday (Open → Close)',
+                        type: 'line',
+                        data: data.cum_intraday.map(x => x * 100),
+                        smooth: true,
+                        showSymbol: false,
+                        lineStyle: { color: '#C7A557', width: 2, type: 'dashed' }
+                    },
+                    {
+                        name: 'Buy & Hold',
+                        type: 'line',
+                        data: data.cum_bnh.map(x => x * 100),
+                        smooth: true,
+                        showSymbol: false,
+                        lineStyle: { color: '#7E8794', width: 1.5 }
+                    }
+                ]
+            });
+        }
+
+        async function runOvernightAnalysis() {
+            document.getElementById('loadingOverlay').classList.add('active');
+            const tickers = document.getElementById('tickers').value.split(',').map(t => t.trim());
+            try {
+                const response = await fetch('/api/overnight', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tickers: tickers,
+                        start_date: document.getElementById('startDate').value,
+                        end_date: document.getElementById('endDate').value
+                    })
+                });
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.detail || 'Analysis failed');
+                }
+                overnightData = await response.json();
+                
+                riskMonitorData = overnightData.risk_monitor || [];
+                initHoldings();
+                
+                document.getElementById('overnightIsHeader').innerHTML = `IS Gross<br><span style="font-size:0.7em; color:var(--muted)">${overnightData.is_range}</span>`;
+                document.getElementById('overnightOosHeader').innerHTML = `OOS Gross<br><span style="font-size:0.7em; color:var(--muted)">${overnightData.oos_range}</span>`;
+                
+                const select = document.getElementById('decompTickerSelect');
+                select.innerHTML = '<option value="Portfolio">Equal-Weight Portfolio</option>';
+                tickers.forEach(t => {
+                    if (overnightData.decomposition.tickers[t]) {
+                        select.innerHTML += `<option value="${t}">${t}</option>`;
+                    }
+                });
+
+                document.getElementById('findingText').textContent = overnightData.finding;
+
+                const totalsBody = document.getElementById('totalsBody');
+                let totalsHtml = '';
+                for (const [asset, vals] of Object.entries(overnightData.decomposition.totals)) {
+                    const oClass = vals.overnight >= 0 ? 'gain' : 'loss';
+                    const iClass = vals.intraday >= 0 ? 'gain' : 'loss';
+                    const bClass = vals.bnh >= 0 ? 'gain' : 'loss';
+                    totalsHtml += `
+                        <tr>
+                            <td style="font-weight: 600;">${asset}</td>
+                            <td class="${oClass}">${vals.overnight >= 0 ? '+' : ''}${vals.overnight.toFixed(2)}%</td>
+                            <td class="${iClass}">${vals.intraday >= 0 ? '+' : ''}${vals.intraday.toFixed(2)}%</td>
+                            <td class="${bClass}">${vals.bnh >= 0 ? '+' : ''}${vals.bnh.toFixed(2)}%</td>
+                        </tr>
+                    `;
+                }
+                totalsBody.innerHTML = totalsHtml;
+
+                const m = overnightData.metrics;
+                const metricsRows = [
+                    { label: 'Total Return', key: 'total_return_pct' },
+                    { label: 'CAGR', key: 'cagr_pct' },
+                    { label: 'Sharpe Ratio', key: 'sharpe_ratio' },
+                    { label: 'Max Drawdown', key: 'max_drawdown_pct' },
+                    { label: 'Win Rate', key: 'win_rate_pct' },
+                    { label: 'Nights Traded', key: 'num_trades' }
+                ];
+                
+                let metricsHtml = '';
+                metricsRows.forEach(row => {
+                    const isGrossVal = m.is_gross[row.key];
+                    const isNetVal = m.is_net[row.key];
+                    const oosGrossVal = m.oos_gross[row.key];
+                    const oosNetVal = m.oos_net[row.key];
+                    
+                    const format = (v) => {
+                        if (row.key === 'num_trades') return v;
+                        if (row.key === 'sharpe_ratio') return v.toFixed(2);
+                        return (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+                    };
+                    
+                    const color = (v) => {
+                        if (row.key === 'max_drawdown_pct') return 'loss';
+                        if (row.key === 'num_trades') return '';
+                        return v >= 0 ? 'gain' : 'loss';
+                    };
+
+                    metricsHtml += `
+                        <tr>
+                            <td style="color: var(--muted);">${row.label}</td>
+                            <td class="${color(isGrossVal)}">${format(isGrossVal)}</td>
+                            <td class="${color(isNetVal)}">${format(isNetVal)}</td>
+                            <td class="${color(oosGrossVal)}">${format(oosGrossVal)}</td>
+                            <td class="${color(oosNetVal)}">${format(oosNetVal)}</td>
+                        </tr>
+                    `;
+                });
+                document.getElementById('overnightMetricsBody').innerHTML = metricsHtml;
+
+                renderDecompositionChart('Portfolio');
+
+            } catch (err) {
+                alert('Error: ' + err.message);
+            } finally {
+                document.getElementById('loadingOverlay').classList.remove('active');
+            }
+        }
+
+        async function runBacktest() {
+            document.getElementById('loadingOverlay').classList.add('active');
+            document.getElementById('runBtn').disabled = true;
+
+            const tickers = document.getElementById('tickers').value.split(',').map(t => t.trim());
+            const payload = {
+                tickers: tickers,
+                start_date: document.getElementById('startDate').value,
+                end_date: document.getElementById('endDate').value,
+                gap_threshold: parseFloat(document.getElementById('gapThreshold').value) / 100,
+                continuation_gap: parseFloat(document.getElementById('contGap').value) / 100,
+                vol_ratio_high: parseFloat(document.getElementById('volHigh').value),
+                vol_ratio_low: parseFloat(document.getElementById('volLow').value),
+                atr_multiplier: parseFloat(document.getElementById('atrMult').value),
+                max_positions: parseInt(document.getElementById('maxPos').value)
+            };
+
+            try {
+                const response = await fetch('/api/backtest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.detail || 'Backtest failed');
+                }
+                const data = await response.json();
+
+                document.getElementById('metaRow').innerHTML = `
+                    <span>UNIVERSE: ${tickers.join(', ')}</span>
+                    <span>DATA: yfinance (underlying) + Bitget public API (tokenized)</span>
+                    <span>RANGE: ${data.date_range}</span>
+                `;
+
+                document.getElementById('isRangeTitle').textContent = `In-Sample (${data.is_range})`;
+                document.getElementById('oosRangeTitle').textContent = `Out-of-Sample (${data.oos_range})`;
+
+                renderMetrics('metricsIS', data.metrics_is);
+                renderMetrics('metricsOOS', data.metrics_oos);
+                
+                riskMonitorData = data.risk_monitor || [];
+                updateRiskMonitor();
+                initHoldings();
+                
+                allTrades = data.trades;
+                filterTrades();
+                renderCharts(data.equity_curve);
+
+            } catch (err) {
+                alert('Error: ' + err.message);
+                document.getElementById('isRangeTitle').textContent = 'In-Sample';
+                document.getElementById('oosRangeTitle').textContent = 'Out-of-Sample';
+                document.getElementById('metricsIS').innerHTML = '<div class="metric-item" style="grid-column: 1/-1; text-align:center; color: var(--loss);">Range too short or error occurred</div>';
+                document.getElementById('metricsOOS').innerHTML = '';
+            } finally {
+                document.getElementById('loadingOverlay').classList.remove('active');
+                document.getElementById('runBtn').disabled = false;
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            runBacktest();
+        });
+    </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

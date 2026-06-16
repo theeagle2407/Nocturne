@@ -1,0 +1,17 @@
+{
+  "name": "nocturne",
+  "version": "1.0.0",
+  "description": "Overnight-risk intelligence for tokenized US stocks — an honest backtest + risk terminal built on real Yahoo Finance and Bitget public market data.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["tokenized-stocks","overnight-risk","backtest","bitget","trading","quant","risk-management"],
+  "author": "",
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.6.0"
+  }
+}

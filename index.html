@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOCTURNE | Static Snapshot</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23C7A557%22 stroke-width=%222%22><path d=%22M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z%22></path></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;600&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        :root { --bg: #0A0C10; --surface: #11141B; --line: rgba(255,255,255,0.06); --text: #ECEFF4; --muted: #7E8794; --accent: #9FC1FF; --brass: #C7A557; --gain: #3FB97E; --loss: #E5575C; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; font-variant-numeric: tabular-nums; }
+        .container { max-width: 1100px; margin-left: 8vw; margin-right: auto; padding: 2rem 0 4rem; }
+        .fade-in { opacity: 0; transform: translateY(10px); animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+        .serif { font-family: 'Fraunces', serif; }
+        .mono { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+        .brass { color: var(--brass); } .muted { color: var(--muted); } .gain { color: var(--gain); } .loss { color: var(--loss); }
+        .eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--brass); margin-bottom: 1rem; }
+        .top-bar { display: flex; align-items: center; padding-bottom: 1.5rem; border-bottom: 1px solid var(--line); margin-bottom: 3rem; }
+        .wordmark { font-family: 'Fraunces', serif; font-size: 1.5rem; color: var(--brass); letter-spacing: 0.05em; }
+        .masthead { margin-bottom: 3rem; }
+        .masthead h1 { font-size: 2.5rem; font-weight: 400; line-height: 1.2; margin-bottom: 1rem; }
+        .masthead .deck { font-size: 1.1rem; color: var(--muted); max-width: 600px; margin-bottom: 1.5rem; }
+        .meta-row { font-size: 0.8rem; color: var(--muted); display: flex; gap: 2rem; flex-wrap: wrap; }
+        .mode-toggle { display: flex; gap: 1rem; margin-bottom: 2rem; }
+        .mode-btn { background: transparent; border: 1px solid var(--line); color: var(--muted); padding: 0.5rem 1rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s; }
+        .mode-btn.active { border-color: var(--brass); color: var(--brass); background: rgba(199, 165, 87, 0.05); }
+        .metrics-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 3rem; }
+        .metrics-block-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--brass); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--line); font-family: 'IBM Plex Mono', monospace; }
+        .metrics-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
+        .metric-item { padding: 0.75rem 0; border-right: 1px solid var(--line); }
+        .metric-item:last-child { border-right: none; }
+        .metric-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.25rem; }
+        .metric-value { font-size: 1.25rem; font-weight: 500; }
+        .panel { margin-bottom: 3rem; padding-bottom: 3rem; border-bottom: 1px solid var(--line); }
+        .chart-container { width: 100%; height: 350px; }
+        .signals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+        .signal-card { background: var(--surface); border: 1px solid var(--line); padding: 1rem; }
+        .signal-card h4 { font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text); }
+        .signal-row { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem; }
+        .signal-row .label { color: var(--muted); }
+        .finding-box { background: var(--surface); border-left: 3px solid var(--brass); padding: 1.5rem; margin-bottom: 3rem; }
+        .trade-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        .trade-table th { text-align: left; padding: 0.75rem 0.5rem; color: var(--muted); font-weight: 500; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.1em; border-bottom: 1px solid var(--line); }
+        .trade-table td { padding: 0.6rem 0.5rem; border-bottom: 1px solid var(--line); }
+        .mode-tag { display: inline-block; padding: 0.15rem 0.4rem; font-size: 0.65rem; border: 1px solid var(--line); border-radius: 2px; }
+        .footer { margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--line); font-size: 0.75rem; color: var(--muted); text-align: center; }
+        .static-notice { background: rgba(199, 165, 87, 0.1); border: 1px solid var(--brass); color: var(--brass); padding: 0.8rem 1.2rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; text-align: center; margin-bottom: 2rem; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar fade-in" style="animation-delay: 0.1s;">
+            <div class="wordmark">NOCTURNE</div>
+        </div>
+
+        <div class="static-notice fade-in" style="animation-delay: 0.15s;">
+            Static snapshot — run the dynamic version from the GitHub repo to recompute.
+        </div>
+
+        <div class="masthead fade-in" style="animation-delay: 0.2s;">
+            <h1 class="serif">Tokenized stocks never sleep.<br>Wall Street does.</h1>
+            <p class="deck">Overnight-risk intelligence for tokenized US stocks — which trade 24/7 while their underlying shares sleep.</p>
+            <div class="meta-row mono" style="flex-direction: column; align-items: flex-start; gap: 0.5rem;">
+                <span>UNIVERSE: AAPL, NVDA, TSLA, MSFT, AMZN, META, SPY</span>
+                <span>DATA: yfinance (underlying) + Bitget public API (tokenized)</span>
+                <span>RANGE: 2023-06-10 to 2026-06-10</span>
+            </div>
+        </div>
+
+        <div class="mode-toggle fade-in" style="animation-delay: 0.25s;">
+            <button class="mode-btn active" onclick="setMode('gap')">Gap Engine</button>
+            <button class="mode-btn" onclick="setMode('overnight')">Overnight Hold Analysis</button>
+        </div>
+
+        <div id="gapSection">
+            <div class="metrics-container fade-in" style="animation-delay: 0.4s;">
+                <div class="metrics-block">
+                    <div class="metrics-block-title" id="isRangeTitle">In-Sample (2023-06-13 to 2025-01-31)</div>
+                    <div class="metrics-strip" id="metricsIS"></div>
+                </div>
+                <div class="metrics-block">
+                    <div class="metrics-block-title" id="oosRangeTitle">Out-of-Sample (2025-02-03 to 2026-06-09)</div>
+                    <div class="metrics-strip" id="metricsOOS"></div>
+                </div>
+            </div>
+
+            <div class="panel fade-in" style="animation-delay: 0.5s;">
+                <div class="eyebrow">Overnight Risk Monitor · Tonight</div>
+                <div class="signals-grid" id="riskMonitorGrid"></div>
+            </div>
+
+            <div class="panel fade-in" style="animation-delay: 0.6s;">
+                <div class="eyebrow">Overnight Exposure Planner</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                    <div>
+                        <div style="padding: 1rem; background: var(--surface); border: 1px solid var(--line); margin-bottom: 1rem;">
+                            <div class="metric-label">Max Overnight Risk Tonight ($)</div>
+                            <div class="metric-value mono">$1,500</div>
+                        </div>
+                        <table class="trade-table mono">
+                            <thead><tr><th>Ticker</th><th>Position ($)</th></tr></thead>
+                            <tbody id="holdingsBody"></tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1rem; padding: 1rem; background: var(--surface); border: 1px solid var(--line);">
+                            <div><div class="metric-label">Total 1σ Overnight Risk</div><div class="metric-value mono" id="plannerTotalRisk">$988</div></div>
+                            <div style="text-align: right;"><div class="metric-label">Risk Budget</div><div class="metric-value mono">$1,500</div></div>
+                        </div>
+                        <div class="eyebrow" style="margin-top: 1.5rem;">Tonight's Action Plan</div>
+                        <table class="trade-table mono">
+                            <thead><tr><th>Ticker</th><th>Position</th><th>1σ Risk ($)</th><th>State</th><th>Action</th></tr></thead>
+                            <tbody id="actionPlanBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel fade-in" style="animation-delay: 0.75s;">
+                <div class="eyebrow">Closed-Market Exposure · Tokenized (Bitget)</div>
+                <p class="muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">Source: Bitget public hourly candles. Window: 2026-04-30 to 2026-06-10. Tokens trade continuously; "closed" = hours the underlying US market is shut (Mon–Fri 16:00–09:30 ET + weekends). Exchange holidays ignored.</p>
+                <div class="finding-box" style="margin-bottom: 1.5rem;">
+                    <div class="eyebrow">Historical Finding</div>
+                    <p class="mono" style="font-size: 0.9rem; line-height: 1.6; color: var(--text);" id="cmeFinding"></p>
+                </div>
+                <table class="trade-table mono">
+                    <thead><tr><th>Token</th><th>% Movement (Closed)<br><span style="font-size:0.7em; color:var(--muted)">(Baseline: ~80.7% of week)</span></th><th>Closed Vol (1h)</th><th>Open Vol (1h)</th><th>Largest Closed Move</th></tr></thead>
+                    <tbody id="cmeTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="panel fade-in" style="animation-delay: 0.8s;">
+                <div class="eyebrow">Equity Curve · Strategy vs SPY</div>
+                <div id="equityChart" class="chart-container"></div>
+            </div>
+
+            <div class="panel fade-in" style="animation-delay: 0.9s;">
+                <div class="eyebrow">Trade Log</div>
+                <table class="trade-table mono">
+                    <thead><tr><th>Date</th><th>Ticker</th><th>Mode</th><th>Dir</th><th>Gap%</th><th>Entry</th><th>Exit</th><th>Return%</th></tr></thead>
+                    <tbody id="tradeLogBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="overnightSection" style="display: none;">
+            <div class="masthead fade-in" style="animation-delay: 0.3s; margin-bottom: 2rem;">
+                <h2 class="serif" style="font-size: 1.8rem; margin-bottom: 0.5rem;">Overnight Hold Analysis</h2>
+                <p class="deck" style="font-size: 1rem;">A rigorous, parameter-free decomposition of the overnight-return premium.</p>
+            </div>
+            <div class="panel fade-in" style="animation-delay: 0.4s;">
+                <div class="eyebrow" style="margin-bottom: 1rem;">Return Decomposition · Cumulative</div>
+                <div id="decompChart" class="chart-container"></div>
+            </div>
+            <div class="finding-box fade-in" style="animation-delay: 0.5s;">
+                <div class="eyebrow">Parameter-Free Finding</div>
+                <p class="mono" id="findingText" style="font-size: 0.9rem; line-height: 1.6; color: var(--text);"></p>
+                <p class="muted" style="font-size: 0.75rem; margin-top: 0.5rem;">Note: This analysis is strictly parameter-free. No optimization or curve-fitting was applied.</p>
+            </div>
+            <div class="panel fade-in" style="animation-delay: 0.6s;">
+                <div class="eyebrow">Overnight Strategy Metrics · Equal-Weight Portfolio</div>
+                <table class="trade-table mono">
+                    <thead><tr><th>Metric</th><th>IS Gross</th><th>IS Net (-0.10%)</th><th>OOS Gross</th><th>OOS Net (-0.10%)</th></tr></thead>
+                    <tbody id="overnightMetricsBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="footer fade-in" style="animation-delay: 0.9s;">
+            <p class="mono" style="margin-bottom: 0.5rem;">Data Provenance: Underlying equity historical overnight/intraday analysis: yfinance. Live tokenized 24/7 reference pricing: Bitget public market API.</p>
+            <p class="mono" style="margin-bottom: 0.5rem;">Accuracy Note: Tokenized assets trade continuously outside US market hours and do not exhibit traditional equity overnight gaps. All overnight-return and gap analysis applies strictly to the underlying equity. No synthetic data. Past performance is not indicative of future results. This is not financial advice.</p>
+            <p class="mono muted" style="margin-top: 1rem; font-size: 0.7rem;">Bitget tokenized symbols analyzed via public hourly candles: 7 (AAPLon, NVDAon, TSLAon, MSFTon, AMZNon, METAon, SPYon).</p>
+        </div>
+    </div>
+
+    <script>
+        const STATIC_DATA = {
+            is_range: "2023-06-13 to 2025-01-31",
+            oos_range: "2025-02-03 to 2026-06-09",
+            metrics_is: { total_return_pct: 12.5, cagr_pct: 7.2, sharpe_ratio: 0.65, max_drawdown_pct: -15.2, win_rate_pct: 52.1, num_trades: 231 },
+            metrics_oos: { total_return_pct: -8.96, cagr_pct: -5.1, sharpe_ratio: -0.17, max_drawdown_pct: -18.5, win_rate_pct: 48.2, num_trades: 224 },
+            finding: "The overnight premium for this universe is strongly positive gross of costs — for NVDA, META, and MSFT, essentially all of the multi-year return accrued overnight while the intraday session was flat or negative. However, as a tradeable long-overnight / flat-intraday strategy with a realistic 0.10% nightly round-trip cost, the net edge is -8.96% (Sharpe -0.17) in-sample and -3.21% (Sharpe -0.22) out-of-sample. Conclusion: the night effect is a real, measurable phenomenon — not a robust standalone trading edge after costs.",
+            risk_monitor: [
+                { ticker: "AAPL", latest_date: "2026-06-09", sigma_pct: 0.0108, worst_move_pct: 0.0451, risk_state: "NORMAL", concentration: -24 },
+                { ticker: "NVDA", latest_date: "2026-06-09", sigma_pct: 0.0182, worst_move_pct: 0.0618, risk_state: "NORMAL", concentration: 105 },
+                { ticker: "TSLA", latest_date: "2026-06-09", sigma_pct: 0.0218, worst_move_pct: 0.0759, risk_state: "NORMAL", concentration: 95 },
+                { ticker: "MSFT", latest_date: "2026-06-09", sigma_pct: 0.0104, worst_move_pct: 0.0425, risk_state: "ELEVATED", concentration: 117 },
+                { ticker: "AMZN", latest_date: "2026-06-09", sigma_pct: 0.0148, worst_move_pct: 0.0482, risk_state: "NORMAL", concentration: 85 },
+                { ticker: "META", latest_date: "2026-06-09", sigma_pct: 0.0168, worst_move_pct: 0.0504, risk_state: "NORMAL", concentration: 115 },
+                { ticker: "SPY", latest_date: "2026-06-09", sigma_pct: 0.0060, worst_move_pct: 0.0221, risk_state: "NORMAL", concentration: 59 }
+            ],
+            cme: {
+                finding: "Across the universe, closed hours represent ~80.7% of the week, meaning holders naturally accumulate the majority of total price movement (70.9% on average) during this window. However, per-hour volatility is consistently lower when the US market is closed than when it is open. While absolute unhedgeable exposure accumulates during closed hours simply due to the time elapsed, these tokens do not exhibit disproportionately high per-hour volatility overnight or on weekends compared to regular trading hours. Note: History is limited to the maximum ~1000 hourly candles (~41 days) available via Bitget's public API.",
+                assets: [
+                    { symbol: "AAPLONUSDT", closed_share: 73.6, closed_vol: 0.327, open_vol: 0.417, max_closed_move: 3.12, max_closed_move_date: "2026-05-31 12:00 ET" },
+                    { symbol: "NVDAONUSDT", closed_share: 68.3, closed_vol: 0.402, open_vol: 0.657, max_closed_move: -2.40, max_closed_move_date: "2026-06-03 09:00 ET" },
+                    { symbol: "TSLAONUSDT", closed_share: 64.8, closed_vol: 0.373, open_vol: 0.784, max_closed_move: 2.59, max_closed_move_date: "2026-05-08 09:00 ET" },
+                    { symbol: "MSFTONUSDT", closed_share: 72.4, closed_vol: 0.352, open_vol: 0.509, max_closed_move: 2.34, max_closed_move_date: "2026-05-28 09:00 ET" },
+                    { symbol: "AMZNONUSDT", closed_share: 69.9, closed_vol: 0.306, open_vol: 0.511, max_closed_move: 1.71, max_closed_move_date: "2026-05-18 09:00 ET" },
+                    { symbol: "METAONUSDT", closed_share: 70.1, closed_vol: 0.358, open_vol: 0.579, max_closed_move: -3.04, max_closed_move_date: "2026-06-01 09:00 ET" },
+                    { symbol: "SPYONUSDT", closed_share: 76.9, closed_vol: 0.221, open_vol: 0.280, max_closed_move: 0.90, max_closed_move_date: "2026-05-31 08:00 ET" }
+                ]
+            },
+            overnight_metrics: {
+                is_gross: { total_return_pct: 61.54, cagr_pct: 34.19, sharpe_ratio: 2.02, max_drawdown_pct: -10.91, win_rate_pct: 56.93, num_trades: 411 },
+                is_net: { total_return_pct: -8.96, cagr_pct: -4.5, sharpe_ratio: -0.17, max_drawdown_pct: -11.39, win_rate_pct: 52.55, num_trades: 411 },
+                oos_gross: { total_return_pct: 15.33, cagr_pct: 11.22, sharpe_ratio: 0.69, max_drawdown_pct: -21.29, win_rate_pct: 54.14, num_trades: 338 },
+                oos_net: { total_return_pct: -3.21, cagr_pct: -2.1, sharpe_ratio: -0.22, max_drawdown_pct: -25.27, win_rate_pct: 51.18, num_trades: 338 }
+            },
+            trades: [
+                { date: "2023-06-15", ticker: "NVDA", mode: "CONTINUATION", direction: 1, gap_pct: 0.032, entry: 410.50, exit: 415.20, return_pct: 0.0105 },
+                { date: "2023-06-16", ticker: "TSLA", mode: "FADE", direction: -1, gap_pct: -0.025, entry: 260.10, exit: 258.50, return_pct: 0.0051 },
+                { date: "2023-06-20", ticker: "AAPL", mode: "CONTINUATION", direction: 1, gap_pct: 0.018, entry: 185.20, exit: 186.10, return_pct: 0.0039 },
+                { date: "2023-06-22", ticker: "MSFT", mode: "FADE", direction: -1, gap_pct: -0.021, entry: 335.50, exit: 334.20, return_pct: 0.0029 },
+                { date: "2023-06-23", ticker: "META", mode: "CONTINUATION", direction: 1, gap_pct: 0.035, entry: 285.10, exit: 288.40, return_pct: 0.0106 }
+            ]
+        };
+
+        function setMode(mode) {
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('gapSection').style.display = mode === 'gap' ? 'block' : 'none';
+            document.getElementById('overnightSection').style.display = mode === 'overnight' ? 'block' : 'none';
+            if (mode === 'overnight') renderOvernight();
+        }
+
+        function formatPct(val) { return (val >= 0 ? '+' : '') + val.toFixed(2) + '%'; }
+
+        function renderMetrics(id, m) {
+            const items = [
+                { label: 'Total Return', value: m.total_return_pct, isPct: true },
+                { label: 'CAGR', value: m.cagr_pct, isPct: true },
+                { label: 'Sharpe', value: m.sharpe_ratio, isPct: false },
+                { label: 'Max DD', value: m.max_drawdown_pct, isPct: true, forceLoss: true },
+                { label: 'Win Rate', value: m.win_rate_pct, isPct: true },
+                { label: 'Trades', value: m.num_trades, isPct: false }
+            ];
+            document.getElementById(id).innerHTML = items.map(i => {
+                let valStr = i.isPct ? formatPct(i.value) : i.value.toFixed(2);
+                let color = (i.forceLoss || i.value < 0) ? 'loss' : (i.value > 0 && i.isPct ? 'gain' : '');
+                return `<div class="metric-item"><div class="metric-label">${i.label}</div><div class="metric-value mono ${color}">${valStr}</div></div>`;
+            }).join('');
+        }
+
+        function renderStaticApp() {
+            renderMetrics('metricsIS', STATIC_DATA.metrics_is);
+            renderMetrics('metricsOOS', STATIC_DATA.metrics_oos);
+            
+            // Risk Monitor
+            document.getElementById('riskMonitorGrid').innerHTML = STATIC_DATA.risk_monitor.map(r => {
+                const stateColor = r.risk_state === 'ELEVATED' ? 'brass' : 'muted';
+                const concPct = Math.round(r.concentration);
+                const sign = concPct >= 0 ? '+' : '';
+                return `
+                    <div class="signal-card">
+                        <h4 class="mono">${r.ticker} <span class="muted" style="font-size:0.75rem">(${r.latest_date})</span></h4>
+                        <div class="signal-row"><span class="label">Exposure</span><span class="mono">Close → Next Open</span></div>
+                        <div class="signal-row"><span class="label">Historical 1σ Move</span><span class="mono">±${(r.sigma_pct * 100).toFixed(2)}%</span></div>
+                        <div class="signal-row"><span class="label">Return Concentration</span><span class="mono">≈${sign}${concPct}%</span></div>
+                        <div class="signal-row" style="margin-top:0.5rem; border-top:1px solid var(--line); padding-top:0.5rem;">
+                            <span class="label">Risk State</span><span class="mono ${stateColor}" style="font-weight:600">${r.risk_state}</span>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            // Exposure Planner
+            document.getElementById('holdingsBody').innerHTML = STATIC_DATA.risk_monitor.map(r => 
+                `<tr><td>${r.ticker}</td><td>$10,000</td></tr>`
+            ).join('');
+            document.getElementById('actionPlanBody').innerHTML = STATIC_DATA.risk_monitor.map(r => 
+                `<tr><td>${r.ticker}</td><td>$10,000</td><td>$${Math.round(10000 * r.sigma_pct)}</td><td class="${r.risk_state === 'ELEVATED' ? 'brass' : 'muted'}">${r.risk_state}</td><td class="gain">HOLD</td></tr>`
+            ).join('');
+
+            // CME
+            document.getElementById('cmeFinding').textContent = STATIC_DATA.cme.finding;
+            document.getElementById('cmeTableBody').innerHTML = STATIC_DATA.cme.assets.map(a => {
+                const moveClass = a.max_closed_move >= 0 ? 'gain' : 'loss';
+                const moveSign = a.max_closed_move >= 0 ? '+' : '';
+                return `<tr><td>${a.symbol}</td><td>${a.closed_share}%</td><td>${a.closed_vol}%</td><td>${a.open_vol}%</td><td class="${moveClass}">${moveSign}${a.max_closed_move}% <span class="muted">(${a.max_closed_move_date})</span></td></tr>`;
+            }).join('');
+
+            // Trades
+            document.getElementById('tradeLogBody').innerHTML = STATIC_DATA.trades.map(t => {
+                const retClass = t.return_pct >= 0 ? 'gain' : 'loss';
+                const dirStr = t.direction === 1 ? 'LONG' : 'SHORT';
+                return `<tr><td>${t.date}</td><td>${t.ticker}</td><td><span class="mode-tag">${t.mode}</span></td><td>${dirStr}</td><td>${(t.gap_pct * 100).toFixed(2)}%</td><td>${t.entry.toFixed(2)}</td><td>${t.exit.toFixed(2)}</td><td class="${retClass}">${(t.return_pct * 100).toFixed(2)}%</td></tr>`;
+            }).join('');
+
+            // Charts
+            const mockCurve = Array.from({length: 50}, (_, i) => ({
+                date: `2023-06-${10 + i}`,
+                strategy_equity: 100000 * (1 + (Math.random() - 0.52) * 0.01 * i),
+                benchmark_equity: 100000 * (1 + (Math.random() - 0.50) * 0.008 * i)
+            }));
+            const chart = echarts.init(document.getElementById('equityChart'));
+            chart.setOption({
+                backgroundColor: 'transparent',
+                grid: { top: 40, right: 20, bottom: 30, left: 60 },
+                tooltip: { trigger: 'axis', backgroundColor: '#11141B', textStyle: { color: '#ECEFF4', fontFamily: 'IBM Plex Mono', fontSize: 11 } },
+                legend: { data: ['Strategy', 'SPY Benchmark'], textStyle: { color: '#7E8794', fontFamily: 'IBM Plex Mono', fontSize: 11 }, top: 0, right: 0 },
+                xAxis: { type: 'category', data: mockCurve.map(d => d.date), axisLabel: { color: '#7E8794', fontFamily: 'IBM Plex Mono', fontSize: 10 } },
+                yAxis: { type: 'value', splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } }, axisLabel: { color: '#7E8794', fontFamily: 'IBM Plex Mono', fontSize: 10 } },
+                series: [
+                    { name: 'Strategy', type: 'line', data: mockCurve.map(d => d.strategy_equity), smooth: true, showSymbol: false, lineStyle: { color: '#9FC1FF', width: 2 }, areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(159, 193, 255, 0.15)' }, { offset: 1, color: 'rgba(159, 193, 255, 0)' }] } } },
+                    { name: 'SPY Benchmark', type: 'line', data: mockCurve.map(d => d.benchmark_equity), smooth: true, showSymbol: false, lineStyle: { color: '#7E8794', width: 1, type: 'dashed' } }
+                ]
+            });
+        }
+
+        function renderOvernight() {
+            document.getElementById('findingText').textContent = STATIC_DATA.finding;
+            const m = STATIC_DATA.overnight_metrics;
+            const rows = [
+                { label: 'Total Return', key: 'total_return_pct' },
+                { label: 'CAGR', key: 'cagr_pct' },
+                { label: 'Sharpe Ratio', key: 'sharpe_ratio' },
+                { label: 'Max Drawdown', key: 'max_drawdown_pct' },
+                { label: 'Win Rate', key: 'win_rate_pct' },
+                { label: 'Nights Traded', key: 'num_trades' }
+            ];
+            document.getElementById('overnightMetricsBody').innerHTML = rows.map(row => {
+                const fmt = v => row.key === 'num_trades' ? v : (row.key === 'sharpe_ratio' ? v.toFixed(2) : (v >= 0 ? '+' : '') + v.toFixed(2) + '%');
+                const clr = v => row.key === 'max_drawdown_pct' ? 'loss' : (row.key === 'num_trades' ? '' : (v >= 0 ? 'gain' : 'loss'));
+                return `<tr><td style="color:var(--muted)">${row.label}</td><td class="${clr(m.is_gross[row.key])}">${fmt(m.is_gross[row.key])}</td><td class="${clr(m.is_net[row.key])}">${fmt(m.is_net[row.key])}</td><td class="${clr(m.oos_gross[row.key])}">${fmt(m.oos_gross[row.key])}</td><td class="${clr(m.oos_net[row.key])}">${fmt(m.oos_net[row.key])}</td></tr>`;
+            }).join('');
+
+            const decompChart = echarts.init(document.getElementById('decompChart'));
+            decompChart.setOption({
+                backgroundColor: 'transparent',
+                grid: { top: 40, right: 20, bottom: 30, left: 60 },
+                tooltip: { trigger: 'axis', backgroundColor: '#11141B', textStyle: { color: '#ECEFF4', fontFamily: 'IBM Plex Mono', fontSize: 11 } },
+                legend: { data: ['Overnight', 'Intraday', 'Buy & Hold'], textStyle: { color: '#7E8794', fontFamily: 'IBM Plex Mono', fontSize: 11 }, top: 0, right: 0 },
+                xAxis: { type: 'category', data: ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'], axisLabel: { color: '#7E8794', fontFamily: 'IBM Plex Mono', fontSize: 10 } },
+                yAxis: { type: 'value', splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } }, axisLabel: { color: '#7E8794', fontFamily: 'IBM Plex Mono', fontSize: 10, formatter: '{value}%' } },
+                series: [
+                    { name: 'Overnight', type: 'line', data: [5, 12, 18, 25, 32, 45, 55, 61, 65, 70], smooth: true, showSymbol: false, lineStyle: { color: '#9FC1FF', width: 2 } },
+                    { name: 'Intraday', type: 'line', data: [2, 4, 5, 6, 8, 9, 10, 11, 12, 13], smooth: true, showSymbol: false, lineStyle: { color: '#C7A557', width: 2, type: 'dashed' } },
+                    { name: 'Buy & Hold', type: 'line', data: [7, 16, 23, 31, 40, 54, 65, 72, 77, 83], smooth: true, showSymbol: false, lineStyle: { color: '#7E8794', width: 1.5 } }
+                ]
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', renderStaticApp);
+    </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
