@@ -42,32 +42,44 @@ const FOMC_DATES = new Set([
 ]);
 
 async function fetchYahooData(ticker, startDate, endDate) {
-    try {
-        const period1 = Math.floor(new Date(startDate).getTime() / 1000);
-        const period2 = Math.floor(new Date(endDate).getTime() / 1000);
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?period1=${period1}&period2=${period2}&interval=1d`;
-        const response = await axios.get(url, { timeout: 10000 });
-        const result = response.data.chart.result[0];
-        if (!result || !result.timestamp) return null;
-        
-        const data = [];
-        for (let i = 0; i < result.timestamp.length; i++) {
-            const date = new Date(result.timestamp[i] * 1000).toISOString().split('T')[0];
-            const q = result.indicators.quote[0];
-            data.push({
-                date,
-                open: q.open[i],
-                high: q.high[i],
-                low: q.low[i],
-                close: q.close[i],
-                volume: q.volume[i]
-            });
+    const period1 = Math.floor(new Date(startDate).getTime() / 1000);
+    const period2 = Math.floor(new Date(endDate).getTime() / 1000);
+    // Yahoo rejects header-less requests from datacenter IPs (reads them as bots).
+    // Send a real browser identity, and try both Yahoo hosts in case one blocks the IP.
+    const headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US,en;q=0.9'
+    };
+    const hosts = ['query1.finance.yahoo.com', 'query2.finance.yahoo.com'];
+    for (const host of hosts) {
+        try {
+            const url = `https://${host}/v8/finance/chart/${ticker}?period1=${period1}&period2=${period2}&interval=1d`;
+            const response = await axios.get(url, { timeout: 15000, headers });
+            const result = response.data.chart.result[0];
+            if (!result || !result.timestamp) continue;
+
+            const data = [];
+            for (let i = 0; i < result.timestamp.length; i++) {
+                const date = new Date(result.timestamp[i] * 1000).toISOString().split('T')[0];
+                const q = result.indicators.quote[0];
+                data.push({
+                    date,
+                    open: q.open[i],
+                    high: q.high[i],
+                    low: q.low[i],
+                    close: q.close[i],
+                    volume: q.volume[i]
+                });
+            }
+            const cleaned = data.filter(d => d.open != null && d.close != null);
+            if (cleaned.length) return cleaned;
+        } catch (e) {
+            console.error(`Error fetching ${ticker} from ${host}:`, e.message);
+            // fall through and try the next host
         }
-        return data.filter(d => d.open != null && d.close != null);
-    } catch (e) {
-        console.error(`Error fetching ${ticker}:`, e.message);
-        return null;
     }
+    return null;
 }
 
 function calcMetrics(equitySeries) {
