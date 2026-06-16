@@ -80,11 +80,11 @@
         <div id="gapSection">
             <div class="metrics-container fade-in" style="animation-delay: 0.4s;">
                 <div class="metrics-block">
-                    <div class="metrics-block-title" id="isRangeTitle">In-Sample (2023-06-13 to 2025-01-31)</div>
+                    <div class="metrics-block-title" id="isRangeTitle">In-Sample (2023-06-14 to 2025-07-18)</div>
                     <div class="metrics-strip" id="metricsIS"></div>
                 </div>
                 <div class="metrics-block">
-                    <div class="metrics-block-title" id="oosRangeTitle">Out-of-Sample (2025-02-03 to 2026-06-09)</div>
+                    <div class="metrics-block-title" id="oosRangeTitle">Out-of-Sample (2025-07-21 to 2026-06-09)</div>
                     <div class="metrics-strip" id="metricsOOS"></div>
                 </div>
             </div>
@@ -180,10 +180,10 @@
 
     <script>
         const STATIC_DATA = {
-            is_range: "2023-06-13 to 2025-01-31",
-            oos_range: "2025-02-03 to 2026-06-09",
-            metrics_is: { total_return_pct: 12.5, cagr_pct: 7.2, sharpe_ratio: 0.65, max_drawdown_pct: -15.2, win_rate_pct: 52.1, num_trades: 231 },
-            metrics_oos: { total_return_pct: -8.96, cagr_pct: -5.1, sharpe_ratio: -0.17, max_drawdown_pct: -18.5, win_rate_pct: 48.2, num_trades: 224 },
+            is_range: "2023-06-14 to 2025-07-18",
+            oos_range: "2025-07-21 to 2026-06-09",
+            metrics_is: { total_return_pct: -18.23, cagr_pct: -9.21, sharpe_ratio: -0.76, max_drawdown_pct: -28.19, win_rate_pct: 49.41, num_trades: 338 },
+            metrics_oos: { total_return_pct: -8.75, cagr_pct: -9.79, sharpe_ratio: -1.01, max_drawdown_pct: -10.33, win_rate_pct: 48.72, num_trades: 117 },
             finding: "The overnight premium for this universe is strongly positive gross of costs — for NVDA, META, and MSFT, essentially all of the multi-year return accrued overnight while the intraday session was flat or negative. However, as a tradeable long-overnight / flat-intraday strategy with a realistic 0.10% nightly round-trip cost, the net edge is -8.96% (Sharpe -0.17) in-sample and -3.21% (Sharpe -0.22) out-of-sample. Conclusion: the night effect is a real, measurable phenomenon — not a robust standalone trading edge after costs.",
             risk_monitor: [
                 { ticker: "AAPL", latest_date: "2026-06-09", sigma_pct: 0.0108, worst_move_pct: 0.0451, risk_state: "NORMAL", concentration: -24 },
@@ -207,10 +207,10 @@
                 ]
             },
             overnight_metrics: {
-                is_gross: { total_return_pct: 61.54, cagr_pct: 34.19, sharpe_ratio: 2.02, max_drawdown_pct: -10.91, win_rate_pct: 56.93, num_trades: 411 },
-                is_net: { total_return_pct: -8.96, cagr_pct: -4.5, sharpe_ratio: -0.17, max_drawdown_pct: -11.39, win_rate_pct: 52.55, num_trades: 411 },
-                oos_gross: { total_return_pct: 15.33, cagr_pct: 11.22, sharpe_ratio: 0.69, max_drawdown_pct: -21.29, win_rate_pct: 54.14, num_trades: 338 },
-                oos_net: { total_return_pct: -3.21, cagr_pct: -2.1, sharpe_ratio: -0.22, max_drawdown_pct: -25.27, win_rate_pct: 51.18, num_trades: 338 }
+                is_gross: { total_return_pct: 53.87, cagr_pct: 22.98, sharpe_ratio: 1.26, max_drawdown_pct: -25.27, win_rate_pct: 56.57, num_trades: 525 },
+                is_net: { total_return_pct: -8.96, cagr_pct: -4.41, sharpe_ratio: -0.17, max_drawdown_pct: -29.71, win_rate_pct: 52.38, num_trades: 525 },
+                oos_gross: { total_return_pct: 21.08, cagr_pct: 24.01, sharpe_ratio: 1.75, max_drawdown_pct: -9.13, win_rate_pct: 53.57, num_trades: 224 },
+                oos_net: { total_return_pct: -3.21, cagr_pct: -3.61, sharpe_ratio: -0.22, max_drawdown_pct: -14.81, win_rate_pct: 50.89, num_trades: 224 }
             },
             trades: [
                 { date: "2023-06-15", ticker: "NVDA", mode: "CONTINUATION", direction: 1, gap_pct: 0.032, entry: 410.50, exit: 415.20, return_pct: 0.0105 },
