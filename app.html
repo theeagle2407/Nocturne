@@ -1172,18 +1172,21 @@
                 
                 let metricsHtml = '';
                 metricsRows.forEach(row => {
-                    const isGrossVal = m.is_gross[row.key];
-                    const isNetVal = m.is_net[row.key];
-                    const oosGrossVal = m.oos_gross[row.key];
-                    const oosNetVal = m.oos_net[row.key];
-                    
+                    const isGrossVal = (m.is_gross || {})[row.key];
+                    const isNetVal = (m.is_net || {})[row.key];
+                    const oosGrossVal = (m.oos_gross || {})[row.key];
+                    const oosNetVal = (m.oos_net || {})[row.key];
+
+                    const isMissing = (v) => v === null || v === undefined || (typeof v === 'number' && !isFinite(v));
                     const format = (v) => {
+                        if (isMissing(v)) return '—';
                         if (row.key === 'num_trades') return v;
                         if (row.key === 'sharpe_ratio') return v.toFixed(2);
                         return (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
                     };
                     
                     const color = (v) => {
+                        if (isMissing(v)) return '';
                         if (row.key === 'max_drawdown_pct') return 'loss';
                         if (row.key === 'num_trades') return '';
                         return v >= 0 ? 'gain' : 'loss';
